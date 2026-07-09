@@ -13,6 +13,9 @@ multiprocessing.Pool.
    lectures/01_lecture/examples/03_multiprocessing/02_cpu_bound.py
 """
 
+from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
+
 
 # ═══════════════════════════════════════════════════════════
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ — не меняйте их
@@ -54,8 +57,7 @@ def compute_sequential(numbers: list[int]) -> list[int]:
 
     Просто для сравнения с параллельной версией.
     """
-    # TODO: реализуйте
-    raise NotImplementedError
+    return [heavy_compute(n) for n in numbers]
 
 
 def compute_parallel_pool(numbers: list[int], processes: int = 4) -> list[int]:
@@ -65,13 +67,16 @@ def compute_parallel_pool(numbers: list[int], processes: int = 4) -> list[int]:
         - Использовать Pool(processes) как context manager
         - Результаты в порядке numbers
     """
-    # TODO: реализуйте
-    raise NotImplementedError
+    if not numbers:
+        return []
+
+    with Pool(processes=processes) as pool:
+        return pool.map(heavy_compute, numbers)
 
 
 # ═══════════════════════════════════════════════════════════
 # ЗАДАНИЕ 3.2 — ThreadPool vs Pool (сравнение)
-# ═══════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 
 
 def compute_with_threads(numbers: list[int], workers: int = 4) -> list[int]:
@@ -79,5 +84,8 @@ def compute_with_threads(numbers: list[int], workers: int = 4) -> list[int]:
 
     Должно работать МЕДЛЕННЕЕ, чем Pool, из-за GIL.
     """
-    # TODO: реализуйте
-    raise NotImplementedError
+    if not numbers:
+        return []
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        return list(executor.map(heavy_compute, numbers))
