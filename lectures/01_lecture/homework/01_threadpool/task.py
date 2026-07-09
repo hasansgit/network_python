@@ -45,6 +45,9 @@ def fetch_one_with_delay(url_delay: tuple[str, float]) -> str:
 # ═══════════════════════════════════════════════════════════
 
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
 def fetch_all(urls: list[str], max_workers: int = 4) -> list[str]:
     """Скачать все URL через ThreadPoolExecutor.
 
@@ -61,8 +64,11 @@ def fetch_all(urls: list[str], max_workers: int = 4) -> list[str]:
         >>> fetch_all(["a", "b", "c"], max_workers=2)
         ['data:a', 'data:b', 'data:c']
     """
-    # TODO: реализуйте
-    raise NotImplementedError
+    if not urls:
+        return []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return list(executor.map(fetch_one, urls))
 
 
 # ═══════════════════════════════════════════════════════════
@@ -85,8 +91,19 @@ def fetch_all_with_errors(urls: list[str], max_workers: int = 4) -> list[str | N
         - Для "bad" URL вернуть None
         - Для остальных — результат fetch_one()
     """
-    # TODO: реализуйте
-    raise NotImplementedError
+    if not urls:
+        return []
+
+    def safe_fetch(url: str) -> str | None:
+        try:
+            if "bad" in url:
+                raise ConnectionError(f"Failed to fetch {url}")
+            return fetch_one(url)
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return list(executor.map(safe_fetch, urls))
 
 
 # ═══════════════════════════════════════════════════════════
@@ -123,5 +140,20 @@ def fetch_all_with_progress(
         )
         # completed[-1] == 3
     """
-    # TODO: реализуйте
-    raise NotImplementedError
+    if not urls:
+        return []
+
+    results: list[str] = []
+    total = len(urls)
+    completed = 0
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_url = {executor.submit(fetch_one, url): url for url in urls}
+        for future in as_completed(future_to_url):
+            result = future.result()
+            completed += 1
+            if progress_callback is not None:
+                progress_callback(completed, total)
+            results.append(result)
+
+    return results
