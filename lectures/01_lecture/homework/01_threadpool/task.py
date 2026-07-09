@@ -98,6 +98,7 @@ def fetch_all_with_errors(urls: list[str], max_workers: int = 4) -> list[str | N
         try:
             if "bad" in url:
                 raise ConnectionError(f"Failed to fetch {url}")
+
             return fetch_one(url)
         except Exception:
             return None
